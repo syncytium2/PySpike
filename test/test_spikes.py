@@ -9,7 +9,8 @@ Distributed under the BSD License
 
 from __future__ import print_function
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
+from pyspike.spikes import create_synfire
 
 import pyspike as spk
 
@@ -95,6 +96,27 @@ def test_merge_empty_spike_trains():
     assert((merged_spikes.spikes == np.sort(merged_spikes.spikes)).all())
     # we don't need to check more, that's done by test_merge_spike_trains
 
+def test_create_synfire():
+    tmin=0
+    tmax = 100 
+    num_trains = 5
+    num_synfire_events = 4
+    num_inverse_events = 0
+    overlap = 0.4
+    shuffle = 0
+    jitter = 0
+    complete = 1
+    background = 1-complete
+    order = 0
+    plot = 0
+    spike_trains = create_synfire(tmin, tmax, num_trains, num_synfire_events, num_inverse_events, overlap, shuffle, jitter, complete, background, order, plot)[0]
+    spikes = []
+    spikes.append(spk.SpikeTrain([0, 29.4118, 58.8235, 88.2353], [tmin, tmax]))
+    spikes.append(spk.SpikeTrain([2.9412, 32.3529, 61.7647, 91.1765], [tmin, tmax]))
+    spikes.append(spk.SpikeTrain([5.8824, 35.2941, 64.7059, 94.1176], [tmin, tmax]))
+    spikes.append(spk.SpikeTrain([8.8235, 38.2353, 67.6471, 97.0588], [tmin, tmax]))
+    spikes.append(spk.SpikeTrain([11.7647, 41.1765, 70.5882, 100.0000], [tmin, tmax]))
+    assert_array_almost_equal(spikes, spike_trains, decimal=4)
 
 if __name__ == "__main__":
     test_load_from_txt()

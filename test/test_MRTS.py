@@ -255,8 +255,8 @@ def test_autoThresh():
     c2 = spk.isi_distance(sp1, sp2, MRTS='auto')
     np.testing.assert_almost_equal(c1, c2, err_msg="ISI")
 
-    c1 = spk.spike_train_order(sp1, sp2, MRTS=t)
-    c2 = spk.spike_train_order(sp1, sp2, MRTS='auto')
+    c1 = spk._spike_train_order_matrix_impl(sp1, sp2, MRTS=t)
+    c2 = spk._spike_train_order_matrix_impl(sp1, sp2, MRTS='auto')
     np.testing.assert_almost_equal(c1, c2, err_msg="directionality")
 
     print('OK2')

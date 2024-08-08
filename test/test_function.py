@@ -315,6 +315,20 @@ def test_df():
     assert_array_almost_equal(xp, xp_expected, decimal=16)
     assert_array_almost_equal(yp, yp_expected, decimal=16)
 
+    tmin = 0
+    tmax = 4
+    spike_trains = []
+    spike_trains.append(spk.SpikeTrain([0.0, 1.0, 2.0, 2.5], [tmin, tmax]))
+    spike_trains.append(spk.SpikeTrain([1.0, 2.5, 4.0], [tmin, tmax]))
+    spike_sync_profile = spk.spike_sync_profile(spike_trains)
+    mxp, myp = spike_sync_profile.get_multi_plottable_data(spike_trains)
+
+    mxp_expected = [0.0, 1.0, 1.0, 2.0, 2.5, 2.5, 4.0]
+    myp_expected = [0., 1., 1., 0., 1., 1., 0.]
+
+    assert_array_almost_equal(mxp, mxp_expected, decimal=16)
+    assert_array_almost_equal(myp, myp_expected, decimal=16)
+
     assert_almost_equal(f.avrg(), 2.0/5.0, decimal=16)
 
     # interval averaging

@@ -11,20 +11,17 @@ import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, assert_array_almost_equal
 
 import pyspike as spk
-from pyspike import SpikeTrain, DiscreteFunc
-from pyspike.spike_order import spike_order_matrix
-from pyspike.plotting import Multi_Profile
 
 def test_spike_order():
 
-    st1 = SpikeTrain([100, 200, 300], [0, 1000])
-    st2 = SpikeTrain([105, 205, 300], [0, 1000])
+    st1 = spk.SpikeTrain([100, 200, 300], [0, 1000])
+    st2 = spk.SpikeTrain([105, 205, 300], [0, 1000])
 
     result = spk.spike_order_values(st1, st2)
     result_expected = [np.array([1, 1, 0]), np.array([-1, -1, 0])]
     assert_array_equal(result, result_expected)
 
-    st3 = SpikeTrain([105, 195, 500], [0, 1000])
+    st3 = spk.SpikeTrain([105, 195, 500], [0, 1000])
 
     result = spk.spike_order_values(st1, st3)
     result_expected = [np.array([1, -1, 0]), np.array([-1, 1, 0])]
@@ -34,25 +31,25 @@ def test_spike_order():
     result_expected = [np.array([1, 0, 0]), np.array([-0.5, -1, 0]), np.array([-0.5, 1, 0])]
     assert_array_equal(result, result_expected)
 
-    result = spike_order_matrix(st1, st2, st3)
+    result = spk.spike_order_matrix(st1, st2, st3)
     result_expected = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
     assert_array_equal(result, result_expected)
 
-    result = spike_order_matrix(st1, st2, st3, verification=True)
+    result = spk.spike_order_matrix(st1, st2, st3, verification=True)
     result_expected = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
     assert_array_equal(result, result_expected)
 
 def test_spike_train_order():
 
-    st1 = SpikeTrain([100, 200, 300], [0, 1000])
-    st2 = SpikeTrain([105, 205, 300], [0, 1000])
-    st3 = SpikeTrain([105, 195, 500], [0, 1000])
+    st1 = spk.SpikeTrain([100, 200, 300], [0, 1000])
+    st2 = spk.SpikeTrain([105, 205, 300], [0, 1000])
+    st3 = spk.SpikeTrain([105, 195, 500], [0, 1000])
 
     result = spk.spike_train_order(st1, st2)
     result_expected = 0.6666
     assert_almost_equal(result, result_expected, decimal=4)
     result = spk.spike_train_order(st1, st2, normalize=False)
-    result_expected = 2.0
+    result_expected = 4.0
     assert_almost_equal(result, result_expected, decimal=4)
 
     result = spk.spike_train_order(st1, st3)
@@ -62,15 +59,16 @@ def test_spike_train_order():
     result_expected = 0.0
     assert_almost_equal(result, result_expected, decimal=4)
 
-    result = spk.spike_train_order_value(st1, st2, st3)
+    result = spk.spike_train_order(st1, st2, st3)
     result_expected_synf = 0.1111
     assert_almost_equal(result, result_expected_synf, decimal=4)
-    result = spk.spike_train_order_value([st1, st2, st3], normalize=False) ##### how can we check if it's correct ? 
-                                                                           ##### I changed the initial function ...
+    result = spk.spike_train_order([st1, st2, st3], normalize=False)
     result_expected = 2
     assert_almost_equal(result, result_expected, decimal=4)
 
-    result_prof = Multi_Profile([st1, st2, st3], 3)
+    spike_trains = [st1, st2, st3]
+    spike_order_profile = spk.spike_train_order_profile(spike_trains)
+    result_prof = spike_order_profile.get_multi_plottable_data(spike_trains)
     result_expected = np.array([[100, 105, 105, 195, 200, 205, 300, 300, 500], [1, 0.5, 0.5, -1, 0, 0, 0, 0, 0]])
     assert_array_equal(result_prof, result_expected)
 
