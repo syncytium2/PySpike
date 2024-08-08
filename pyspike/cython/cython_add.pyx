@@ -184,7 +184,7 @@ def add_discrete_function_cython(double[:] x1, double[:] y1, double[:] mp1,
     cdef int index = 0
     cdef int N1 = len(y1)-1
     cdef int N2 = len(y2)-1
-    x_new[0] = x1[0]
+    x_new[0] = x1[0] 
     while (index1+1 < N1) and (index2+1 < N2):
         if x1[index1+1] < x2[index2+1]:
             index1 += 1

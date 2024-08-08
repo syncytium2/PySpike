@@ -444,7 +444,6 @@ def coincidence_profile_cython(double[:] spikes1, double[:] spikes2,
     else:
         c[0] = 1
         c[1] = 1
-
     return st, c, mp
 
 

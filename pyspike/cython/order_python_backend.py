@@ -12,6 +12,66 @@ Distributed under the BSD License
 import numpy as np
 from pyspike.cython.python_backend import get_tau
 
+def spike_order_profile_python2(spikes1, spikes2, t_start, t_end,
+                                     max_tau, MRTS=0.):
+    true_max = t_end - t_start
+    if max_tau > 0:
+        true_max = min(true_max, 2*max_tau)
+
+    N1 = len(spikes1)
+    N2 = len(spikes2)
+    i = -1
+    j = -1
+    n = 0
+    st = np.zeros(N1 + N2 + 2)  # spike times
+    d = np.zeros(N1 + N2 + 2)   # coincidences
+    mp = np.ones(N1 + N2 + 2)   # multiplicity
+    while i + j < N1 + N2 - 2:
+        if (i < N1-1) and (j == N2-1 or spikes1[i+1] < spikes2[j+1]):
+            i += 1
+            n += 1
+            tau = get_tau(spikes1, spikes2, i, j, true_max, MRTS)
+            st[n] = spikes1[i]
+            if j > -1 and spikes1[i]-spikes2[j] < tau:
+                # current spike gets marked with -1 and previous spike with 1
+                d[n] = -1
+                d[n-1] = 1
+        elif (j < N2-1) and (i == N1-1 or spikes1[i+1] > spikes2[j+1]):
+            j += 1
+            n += 1
+            tau = get_tau(spikes1, spikes2, i, j, true_max, MRTS)
+            st[n] = spikes2[j]
+            if i > -1 and spikes2[j]-spikes1[i] < tau:
+                # current spike gets marked with -1 and previous spike with 1
+                d[n] = -1
+                d[n-1] = 1
+        else:   # spikes1[i+1] = spikes2[j+1]
+            # advance in both spike trains
+            j += 1
+            i += 1
+            n += 1
+            # add only one event with zero asymmetry value and multiplicity 2
+            st[n] = spikes1[i]
+            d[n] = 0
+            mp[n] = 2
+
+    st = st[:n+2]
+    d = d[:n+2]
+    mp = mp[:n+2]
+
+    st[0] = t_start
+    st[len(st)-1] = t_end
+    if N1 + N2 > 0:
+        d[0] = d[1]
+        d[len(d)-1] = d[len(d)-2]
+        mp[0] = mp[1]
+        mp[len(mp)-1] = mp[len(mp)-2]
+    else:
+        d[0] = 1
+        d[1] = 1
+
+    return st, d, mp
+
 ############################################################
 # spike_train_order_python
 ############################################################

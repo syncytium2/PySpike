@@ -420,7 +420,6 @@ def coincidence_python(spikes1, spikes2, t_start, t_end, max_tau, MRTS=0.):
             st[n] = spikes1[i]
             c[n] = 2
             mp[n] = 2
-
     st = st[:n+2]
     c = c[:n+2]
     mp = mp[:n+2]
@@ -435,8 +434,7 @@ def coincidence_python(spikes1, spikes2, t_start, t_end, max_tau, MRTS=0.):
     else:
         c[0] = 1
         c[1] = 1
-
-    return st, c, mp
+    return st[1:-1], c[1:-1], mp[1:-1]
 
 
 ############################################################
