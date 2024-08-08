@@ -12,6 +12,7 @@ Distributed under the BSD License
 from setuptools import setup, find_packages
 from distutils.extension import Extension
 import os.path
+import numpy as np
 
 try:
     from Cython.Distutils import build_ext
@@ -24,8 +25,7 @@ else:
 class numpy_include(object):
     """Defers import of numpy until install_requires is through"""
     def __str__(self):
-        import numpy
-        return numpy.get_include()
+        return np.get_include()
     
     def __fspath(self):
         return str(self)
@@ -36,7 +36,8 @@ if os.path.isfile("pyspike/cython/cython_add.c") and \
    os.path.isfile("pyspike/cython/cython_profiles.c") and \
    os.path.isfile("pyspike/cython/cython_distances.c") and \
    os.path.isfile("pyspike/cython/cython_order.c") and \
-   os.path.isfile("pyspike/cython/cython_simulated_annealing.c"):
+   os.path.isfile("pyspike/cython/cython_simulated_annealing.c") and \
+   os.path.isfile("pyspike/cython/cython_generate_surrogate.c"):
     use_c = True
 else:
     use_c = False
@@ -64,7 +65,9 @@ if use_cython:  # Cython is available, compile .pyx -> .c
         Extension("pyspike.cython.cython_order",
                   ["pyspike/cython/cython_order.pyx"]),
         Extension("pyspike.cython.cython_simulated_annealing",
-                  ["pyspike/cython/cython_simulated_annealing.pyx"])
+                  ["pyspike/cython/cython_simulated_annealing.pyx"]),
+        Extension("pyspike.cython.cython_generate_surrogate",
+                  ["pyspike/cython/cython_generate_surrogate.pyx"])
     ]
     cmdclass.update({'build_ext': build_ext})
 elif use_c:  # c files are there, compile to binaries
@@ -80,7 +83,9 @@ elif use_c:  # c files are there, compile to binaries
         Extension("pyspike.cython.cython_order",
                   ["pyspike/cython/cython_order.c"]),
         Extension("pyspike.cython.cython_simulated_annealing",
-                  ["pyspike/cython/cython_simulated_annealing.c"])
+                  ["pyspike/cython/cython_simulated_annealing.c"]),
+        Extension("pyspike.cython.cython_generate_surrogate",
+                  ["pyspike/cython/cython_generate_surrogate.pyx"])
     ]
 # neither cython nor c files available -> automatic fall-back to python backend
 
@@ -90,7 +95,7 @@ setup(
     version='0.8.0',
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    include_dirs=[numpy_include()],
+    include_dirs=[np.get_include()],
     description='A Python library for the numerical analysis of spike\
 train similarity',
     author='Mario Mulansky',
@@ -125,7 +130,8 @@ train similarity',
                     'cython/cython_get_tau.c',
                     'cython/cython_distances.c',
                     'cython/cython_order.c',
-                    'cython/cython_simulated_annealing.c'],
+                    'cython/cython_simulated_annealing.c',
+                    'cython/cython_generate_surrogate.c'],
         'test': ['Spike_testdata.txt']
     }
 )
