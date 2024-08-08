@@ -1,7 +1,25 @@
 import numpy as np
 import random
+import pyspike
 
 def generate_surro(sto_profs, num_surros):
+    """
+    Compute synfire indicator for each surrogate generated.
+
+    :param sto_profs: Matrix of spike train order profiles.
+    :type sto_profs: ndarray
+    :param num_surros: Number of surrogates to generate.
+    :type num_surros: int
+
+    :returns:
+        - synf_norm (ndarray): Array of normalized synchronization factors for the surrogates.
+    :rtype: ndarray
+
+    Example::
+
+            sto_profs = Multi_Profile_Matrix(spike_trains, variable)
+            synf_norm = generate_surro(sto_profs, num_surros)
+    """
     num_pairs = sto_profs.shape[0]
     num_trains = int((1 + np.sqrt(1 + 8 * num_pairs)) / 2)
     firsts, seconds = np.where(np.triu(np.ones((num_trains, num_trains)), 1))
@@ -20,10 +38,18 @@ def generate_surro(sto_profs, num_surros):
     num_swaps = num_spikes  # eliminate transients !!!!!
     synf = np.zeros(num_surros)
     synf_norm = np.zeros(num_surros)
+
+    try:
+        from .cython.cython_generate_surrogate import Spike_Order_surro
+    except ImportError:
+        pyspike.NoCythonWarn()
+
     for suc in range(num_surros):
-        if suc == 1:
-            num_swaps = round(num_swaps / 2)   
-        indies, a = Spike_Order_surro(indies, firsts, seconds, num_swaps)
+        if suc == 0:
+            num_swaps = round(num_swaps / 2)
+        
+        indies, _ = Spike_Order_surro(indies, firsts, seconds, num_swaps)
+        
 
         surro_sto_profs = np.zeros_like(sto_profs)
         for cc in range(num_coins):
@@ -33,18 +59,33 @@ def generate_surro(sto_profs, num_surros):
         surro_mat = np.tril(np.ones((num_trains, num_trains)), -1)
         surro_mat[np.where(surro_mat)] = surro_mat_entries
         surro_mat = surro_mat.T - surro_mat
-
+        
         try:
-            from pyspike.spike_order import _optimal_spike_train_sorting_from_matrix
+            from .spike_order import _optimal_spike_train_sorting_from_matrix
         except ImportError:
-            pyspike.NoCythonWarn()
+            print("Error: Could not import _optimal_spike_train_sorting_from_matrix from pyspike.spike_order.")
         _, synf[suc], _ = _optimal_spike_train_sorting_from_matrix(surro_mat, full_output=True)
-
         synf_norm[suc] = synf[suc]*2 / ((num_trains-1)*len(sto_profs[0]))
     return synf_norm
 
-
 def Spike_Order_surro(indies1, firsts, seconds, num_swaps):
+    """
+    Perform surrogate spike train shuffling to generate new surrogate profiles.
+
+    :param indies1: Array of indices for spike trains informations.
+    :type indies1: ndarray
+    :param firsts: Array of first indices for upper triangular matrix.
+    :type firsts: ndarray
+    :param seconds: Array of second indices for upper triangular matrix.
+    :type seconds: ndarray
+    :param num_swaps: Number of swaps to perform.
+    :type num_swaps: int
+
+    :returns:
+        - indies1 (ndarray): Updated indices array after shuffling.
+        - error_count (int): Number of errors encountered during shuffling.
+    :rtype: tuple
+    """
     num_coins = indies1.shape[1]
     error_count = 0
     sc = 0
@@ -59,9 +100,9 @@ def Spike_Order_surro(indies1, firsts, seconds, num_swaps):
         pos2 = indies1[4, coin]
         
         fi11 = np.where(indies1[3,:] == pos1)[0]
-        fi21= np.where(indies1[4,:] == pos1)[0]
-        fi12= np.where(indies1[3,:] == pos2)[0]
-        fi22= np.where(indies1[4,:] == pos2)[0]
+        fi21 = np.where(indies1[4,:] == pos1)[0]
+        fi12 = np.where(indies1[3,:] == pos2)[0]
+        fi22 = np.where(indies1[4,:] == pos2)[0]
         fiu = np.unique(np.concatenate((fi11, fi21, fi12, fi22)))
 
         indies1[1, fi11] = train2

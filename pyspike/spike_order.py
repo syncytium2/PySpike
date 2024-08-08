@@ -9,10 +9,9 @@ import numpy as np
 import pyspike
 from pyspike import DiscreteFunc
 from functools import partial
-from pyspike.generic import _generic_profile_multi, resolve_keywords
-from pyspike.isi_lengths import default_thresh
-from pyspike.spikes import reconcile_spike_trains, reconcile_spike_trains_bi
-
+from .generic import _generic_profile_multi, resolve_keywords
+from .isi_lengths import default_thresh
+from .spikes import reconcile_spike_trains, reconcile_spike_trains_bi
 
 ############################################################
 # spike_order_values
@@ -23,23 +22,20 @@ def spike_order_values(*args, **kwargs):
     each spike train. Returns a list containing an array of spike order
     values for every given spike train.
 
-    Valid call structures::
-
-      spike_order_values(st1, st2)       # returns the bi-variate profile
-      spike_order_values(st1, st2, st3)  # multi-variate profile of 3
-                                                   # spike trains
-
-      spike_trains = [st1, st2, st3, st4]          # list of spike trains
-      spike_order_values(spike_trains)    # profile of the list of spike trains
-      spike_order_values(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                                  # given by the indices
-
     Additonal arguments: 
     :param max_tau: Upper bound for coincidence window (default=None).
-    :param indices: list of indices defining which spike trains to use,
-                    if None all given spike trains are used (default=None)
+    :param indices: list of indices defining which spike trains to use, if None all given spike trains are used (default=None)
 
     :returns: The spike order values :math:`D^n_i` as a list of arrays.
+
+    Examples::
+
+            spike_order_values(st1, st2)       # returns the bi-variate profile
+            spike_order_values(st1, st2, st3)  # multi-variate profile of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]          # list of spike trains
+            spike_order_values(spike_trains)    # profile of the list of spike trains
+            spike_order_values(spike_trains, indices=[0, 1])  # use only the spike trains given by the indices
     """
     if len(args) == 1:
         return _spike_order_values_impl(args[0], **kwargs)
@@ -106,38 +102,64 @@ def _spike_order_values_impl(spike_trains, indices=None,
         a /= len(spike_trains)-1
     return asymmetry_list
 
+def spike_order_profile(spike_trains):
+    """
+    Compute the spike order profile for given spike trains.
+
+    :param spike_trains: List of spike trains.
+    :type spike_trains: List of :class:`pyspike.SpikeTrain`
+
+    :returns:
+        - x (ndarray): Sorted array of spike times with tmin and tmax included.
+        - D (list): Spike order profile values.
+    :rtype: tuple
+    """
+    tmin = spike_trains[0].t_start
+    tmax = spike_trains[0].t_end
+    D = spike_order_values(spike_trains)
+    D = list(np.concatenate(D))
+    L = []
+    for i in range(len(spike_trains)):
+        for j in range(len(spike_trains[i])):
+            L.append(spike_trains[i][j])
+    sorted_indices = sorted(range(len(L)), key=lambda i: L[i])
+    D = [D[i] for i in sorted_indices]
+    D.insert(0, D[0])
+    D.append(D[-1])
+    L.append(tmin)
+    L.append(tmax)
+    x = np.sort(L)
+    return x, D
+
 def spike_order_matrix(*args, **kwargs):
     """ Computes the spike order value for each spike in
     each spike train. Returns a symmetric matrix where each element
     represents the combined spike order values of the corresponding pair
     of spike trains.
 
-    Valid call structures:
-
-    spike_order_matrix(st1, st2)  # returns the bi-variate matrix
-    spike_order_matrix(st1, st2, st3)  # multi-variate matrix of 3 spike trains
-
-    spike_trains = [st1, st2, st3, st4]  # list of spike trains
-    spike_order_matrix(spike_trains)  # matrix of the list of spike trains
-    spike_order_matrix(spike_trains, verification=True)  # returns a matrix
-                                                          # with calculated values
-
     Additional arguments:
-    :param verification: Determines whether to return the matrix with calculated
-                         values or an empty matrix (default=False).
+    :param verification: Determines whether to return the matrix with calculated values or a matrix with only zeros (default=False).
     :param max_tau: Upper bound for coincidence window (default=None).
-    :param indices: List of indices defining which spike trains to use,
-                    if None all given spike trains are used (default=None).
+    :param indices: List of indices defining which spike trains to use, if None all given spike trains are used (default=None).
 
     :returns: The spike order matrix.
+
+    Examples::
+
+            spike_order_matrix(st1, st2)  # returns the bi-variate matrix
+            spike_order_matrix(st1, st2, st3)  # multi-variate matrix of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            spike_order_matrix(spike_trains)  # matrix of the list of spike trains
+            spike_order_matrix(spike_trains, verification=True) # returns a matrix with calculated values
     """
     
     if len(args) == 1:
-        return _spike_order_impl(args[0], **kwargs)
+        return _spike_order_matrix_impl(args[0], **kwargs)
     else:
-        return _spike_order_impl(args, **kwargs)
+        return _spike_order_matrix_impl(args, **kwargs)
     
-def _spike_order_impl(spike_trains, verification=False, indices=None,
+def _spike_order_matrix_impl(spike_trains, verification=False, indices=None,
                                        interval=None, max_tau=None, **kwargs):
     """ Computes the multi-variate spike order profile 
     of the given spike trains.
@@ -145,7 +167,7 @@ def _spike_order_impl(spike_trains, verification=False, indices=None,
     :param spike_trains: List of spike trains.
     :type spike_trains: List of :class:`pyspike.SpikeTrain`
     :param verification: Determines whether to return the matrix with calculated
-                         values or an empty matrix (default=False).
+                        values or a matrix with only zeros (default=False).
     :type verification: bool, optional
     :param indices: List of indices defining which spike trains to use,
                     if None all given spike trains are used (default=None).
@@ -203,21 +225,21 @@ def _spike_order_impl(spike_trains, verification=False, indices=None,
         return matrix
 
 ############################################################
-# spike_train_order
+# _spike_train_order_matrix_impl
 ############################################################
-def spike_train_order(spike_train1, spike_train2, normalize=True,
+def _spike_train_order_matrix_impl(spike_train1, spike_train2, normalize=True,
                          interval=None, max_tau=None, **kwargs):
-    """ Computes the overall spike order of the first spike train with
-    respect to the second spike train.
+    """
+    Implementation of bi-variate spike train order value.
 
-    :param spike_train1: First spike train.
-    :type spike_train1: :class:`pyspike.SpikeTrain`
-    :param spike_train2: Second spike train.
-    :type spike_train2: :class:`pyspike.SpikeTrain`
-    :param normalize: Normalize by the number of spikes (multiplicity).
-    :param max_tau: Maximum coincidence window size. If 0 or `None`, the
-                    coincidence window has no upper bound.
-    :returns: The spike train order profile :math:`E(t)`.
+    Args:
+    - spike_train1 (:class:`pyspike.SpikeTrain`): First spike train.
+    - spike_train2 (:class:`pyspike.SpikeTrain`): Second spike train.
+    - normalize (bool): Normalize by the number of spikes (multiplicity). Default is True.
+    - max_tau (float): Maximum coincidence window size. If 0 or `None`, the coincidence window has no upper bound. Default is None.
+
+    Returns:
+    - float: The spike train order matrix :math:`E`.
     """
     if kwargs.get('Reconcile', True):
         spike_train1, spike_train2 = reconcile_spike_trains_bi(spike_train1, spike_train2)
@@ -273,7 +295,7 @@ def spike_train_order_matrix(spike_trains, normalize=True, indices=None,
     :type indices: list or None
     :param max_tau: Maximum coincidence window size. If 0 or `None`, the
                     coincidence window has no upper bound.
-    :returns: The spike-order values.
+    :returns: The spike_train_order matrix.
     """
     if kwargs.get('Reconcile', True):
         spike_trains = reconcile_spike_trains(spike_trains)
@@ -292,8 +314,8 @@ def spike_train_order_matrix(spike_trains, normalize=True, indices=None,
 
     distance_matrix = np.zeros((len(indices), len(indices)))
     for i, j in pairs:
-        d = spike_train_order(spike_trains[i], spike_trains[j], normalize,
-                                 interval, max_tau=max_tau, 
+        d = _spike_train_order_matrix_impl(spike_trains[i], spike_trains[j], normalize,
+                                 interval, max_tau=max_tau,
                                  MRTS=MRTS, RI=RI, Reconcile=False)
         distance_matrix[i, j] = d
         distance_matrix[j, i] = -d
@@ -307,24 +329,21 @@ def spike_train_order_profile(*args, **kwargs):
     """ Computes the spike train order profile :math:`E(t)` of the given
     spike trains. Returns the profile as a DiscreteFunction object.
 
-    Valid call structures::
-
-      spike_train_order_profile(st1, st2)       # returns the bi-variate profile
-      spike_train_order_profile(st1, st2, st3)  # multi-variate profile of 3
-                                                # spike trains
-
-      spike_trains = [st1, st2, st3, st4]       # list of spike trains
-      spike_train_order_profile(spike_trains)   # profile of the list of spike trains
-      spike_train_order_profile(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                               # given by the indices
-
     Additonal arguments: 
     :param max_tau: Upper bound for coincidence window, `default=None`.
-    :param indices: list of indices defining which spike trains to use,
-                    if None all given spike trains are used (default=None)
+    :param indices: list of indices defining which spike trains to use, if None all given spike trains are used (default=None)
 
     :returns: The spike train order profile :math:`E(t)`
     :rtype: :class:`.DiscreteFunction`
+
+    Examples::
+
+            spike_train_order_profile(st1, st2)       # returns the bi-variate profile
+            spike_train_order_profile(st1, st2, st3)  # multi-variate profile of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]       # list of spike trains
+            spike_train_order_profile(spike_trains)   # profile of the list of spike trains
+            spike_train_order_profile(spike_trains, indices=[0, 1])  # use only the spike trains given by the indices
     """
     if len(args) == 1:
         return spike_train_order_profile_multi(args[0], **kwargs)
@@ -385,7 +404,7 @@ def spike_train_order_profile_bi(spike_train1, spike_train2,
                                          spike_train1.t_start,
                                          spike_train1.t_end,
                                          max_tau, MRTS)
-
+    
     return DiscreteFunc(times, coincidences, multiplicity)
 
 
@@ -461,28 +480,27 @@ def _spike_train_order_impl(spike_train1, spike_train2,
 ############################################################
 # spike_train_order
 ############################################################
-def spike_train_order_value(*args, **kwargs):
+def spike_train_order(*args, **kwargs):
     """ Computes the spike train order (Synfire Indicator) of the given
     spike trains.
-
-    Valid call structures::
-
-      spike_train_order_value(st1, st2, normalize=True)  # normalized bi-variate
-                                                    # spike train order
-      spike_train_order_value(st1, st2, st3)  # multi-variate result of 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]       # list of spike trains
-      spike_train_order_value(spike_trains)   # result for the list of spike trains
-      spike_train_order_value(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                       # given by the indices
 
     Additonal arguments: 
      - `max_tau` Upper bound for coincidence window, `default=None`.
      - `normalize` Flag indicating if the reslut should be normalized by the
        number of spikes , default=`False`
 
-
     :returns: The spike train order value (Synfire Indicator)
+
+    Examples::
+
+        spike_train_order(st1, st2, normalize=True)  # normalized bi-variate
+                                                    # spike train order
+        spike_train_order(st1, st2, st3)  # multi-variate result of 3 spike trains
+
+        spike_trains = [st1, st2, st3, st4]       # list of spike trains
+        spike_train_order(spike_trains)   # result for the list of spike trains
+        spike_train_order(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                       # given by the indices
     """
     if len(args) == 1:
         return spike_train_order_multi(args[0], **kwargs)
@@ -528,7 +546,7 @@ def spike_train_order_multi(spike_trains, indices=None, normalize=True,
                     if None all given spike trains are used (default=None)
     :param normalize: Normalize by the number of spike (multiplicity).
     :param interval: averaging interval given as a pair of floats, if None
-                     the average over the whole function is computed.
+                    the average over the whole function is computed.
     :type interval: Pair of floats or None.
     :param max_tau: Maximum coincidence window size. If 0 or `None`, the
                     coincidence window has no upper bound.
@@ -564,8 +582,6 @@ def spike_train_order_multi(spike_trains, indices=None, normalize=True,
         else:
             return e_total
 
-
-
 ############################################################
 # optimal_spike_train_sorting_from_matrix
 ############################################################
@@ -578,7 +594,7 @@ def _optimal_spike_train_sorting_from_matrix(D, full_output=False):
     :param full_output: If true, then function will additionally return the
                         number of performed iterations (default=False)
     :return: (p, F) - tuple with the optimal permutation and synfire indicator.
-             if `full_output=True` , (p, F, iter) is returned.
+            if `full_output=True` , (p, F, iter) is returned.
     """
     N = len(D)
     A = np.sum(np.triu(D, 0))
@@ -618,14 +634,14 @@ def optimal_spike_train_sorting(spike_trains,  indices=None, interval=None,
                     if None all given spike trains are used (default=None)
     :type indices: list or None
     :param interval: time interval filter given as a pair of floats, if None
-                     the full spike trains are used (default=None).
+                    the full spike trains are used (default=None).
     :type interval: Pair of floats or None.
     :param max_tau: Maximum coincidence window size. If 0 or `None`, the
                     coincidence window has no upper bound (default=None).
     :param full_output: If true, then function will additionally return the
                         number of performed iterations (default=False)
     :return: (p, F) - tuple with the optimal permutation and synfire indicator.
-             if `full_output=True` , (p, F, iter) is returned.
+            if `full_output=True` , (p, F, iter) is returned.
     """
     D = spike_train_order_matrix(spike_trains, normalize=False,
                                     indices=indices, interval=interval,
@@ -642,6 +658,11 @@ def permutate_matrix(D, p):
     :param D: The matrix.
     :param d: The permutation.
     :return: The permuated matrix D', ie :math:`D'[n,m] = D[p[n], p[m]]`
+
+    Example::
+            E_init = pyspike.spike_train_order_matrix(spike_trains)
+            phi, F = pyspike.optimal_spike_train_sorting(spike_trains)
+            E_opt = pyspike.permutate_matrix(E_init, phi)
     """
     N = len(D)
     D_p = np.empty_like(D)

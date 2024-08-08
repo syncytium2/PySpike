@@ -8,10 +8,9 @@ from __future__ import absolute_import
 
 import pyspike
 from pyspike import PieceWiseConstFunc
-from pyspike.generic import _generic_profile_multi, _generic_distance_multi, \
-    _generic_distance_matrix, resolve_keywords
-from pyspike.isi_lengths import default_thresh
-from pyspike.spikes import reconcile_spike_trains, reconcile_spike_trains_bi
+from .generic import _generic_profile_multi, _generic_distance_multi, _generic_distance_matrix, resolve_keywords
+from .isi_lengths import default_thresh
+from .spikes import reconcile_spike_trains, reconcile_spike_trains_bi
 
 ############################################################
 # isi_profile
@@ -21,16 +20,6 @@ def isi_profile(*args, **kwargs):
     spike trains. Returns the profile as a PieceWiseConstFunc object. The
     ISI-values are defined positive :math:`I(t)>=0`.
 
-    Valid call structures::
-
-      isi_profile(st1, st2)       # returns the bi-variate profile
-      isi_profile(st1, st2, st3)  # multi-variate profile of 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]  # list of spike trains
-      isi_profile(spike_trains)   # profile of the list of spike trains
-      isi_profile(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                 # given by the indices
-
     The multivariate ISI distance profile for a set of spike trains is defined
     as the average ISI-profile of all pairs of spike-trains:
 
@@ -38,9 +27,18 @@ def isi_profile(*args, **kwargs):
 
     where the sum goes over all pairs <i,j>
 
-
     :returns: The isi-distance profile :math:`I(t)`
     :rtype: :class:`.PieceWiseConstFunc`
+
+    Examples::
+
+            isi_profile(st1, st2)       # returns the bi-variate profile
+            isi_profile(st1, st2, st3)  # multi-variate profile of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            isi_profile(spike_trains)   # profile of the list of spike trains
+            isi_profile(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                        # given by the indices
     """
     if len(args) == 1:
         return isi_profile_multi(args[0], **kwargs)
@@ -132,20 +130,18 @@ def isi_distance(*args, **kwargs):
 
     where the sum goes over all pairs <i,j>
 
-
-
-    Valid call structures::
-
-      isi_distance(st1, st2)  # returns the bi-variate distance
-      isi_distance(st1, st2, st3)  # multi-variate distance of 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]  # list of spike trains
-      isi_distance(spike_trains)  # distance of the list of spike trains
-      isi_distance(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                  # given by the indices
-
     :returns: The isi-distance :math:`D_I`.
     :rtype: double
+
+    Examples::
+
+            isi_distance(st1, st2)  # returns the bi-variate distance
+            isi_distance(st1, st2, st3)  # multi-variate distance of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            isi_distance(spike_trains)  # distance of the list of spike trains
+            isi_distance(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                        # given by the indices
     """
 
     if len(args) == 1:

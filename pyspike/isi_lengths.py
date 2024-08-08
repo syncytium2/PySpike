@@ -9,12 +9,18 @@ Distributed under the BSD License
 import numpy as np
 
 def isi_lengths(spike_times, t_start, t_end):
-    """ Plain Python implementation of logic to extract ISI lengths
-        In:  spike_times - spike times
-             t_start, t_end - interval for ISI calculation
-        Out: isi_lengths - ISI distance between consecutive elements of spike_events
+    """
+    Plain Python implementation of logic to extract ISI lengths.
 
-        Note: the only complexities are with the edges and N==1
+    Args:
+        spike_times (list of float): Spike times.
+        t_start (float): Start interval for ISI calculation.
+        t_end (float): End interval for ISI calculation.
+
+    Returns:
+        list of float: ISI distance between consecutive elements of spike_events.
+
+    Note: The only complexities are with the edges and when N==1
     """
     N = len(spike_times)
     if N == 0:
@@ -46,9 +52,13 @@ def isi_lengths(spike_times, t_start, t_end):
 
 def default_thresh_(train_list, t_start, t_end):
     """ Implements default_thresh()
-        In: train_list - list of list of spike times
-            t_start, t_end - begin and end times for spikes
-        Out: threshold
+    Args:
+        train_list : list of list of spike times 
+        t_start : begin times for spikes
+        t_end : end times for spikes
+
+    Returns:
+        float: Threshold
     """
     spike_pool = []
     for t in train_list:
@@ -61,10 +71,14 @@ def default_thresh_(train_list, t_start, t_end):
     return np.sqrt(ss_avg)
 
 def default_thresh(spike_train_list):
-    """ Computes a default threshold for a list of spike trains
-        In: spike_train_list - list of list of SpikeTrain object
-        Out: threshold as specified in section 2.4 of
-               "Measures of spike train synchrony for data with multiple time scales"
+    """
+    Computes a default threshold for a list of spike trains.
+
+    Args:
+        spike_train_list (list): List of lists of SpikeTrain objects.
+
+    Returns:
+        float: Threshold as specified in section 2.4 of "Measures of spike train synchrony for data with multiple time scales".
     """
     if len(spike_train_list) == 0:
         return 0

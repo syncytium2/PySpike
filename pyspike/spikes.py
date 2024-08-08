@@ -162,13 +162,18 @@ def generate_poisson_spikes(rate, interval):
     return SpikeTrain(spikes, interval)
 
 def reconcile_spike_trains(spike_trains):
-    """ make sure that Spike trains meet PySpike rules
-            In: spike_trains - a list of SpikeTrain objects
-            Out: spike_trains - same list with some fixes:
-              1) t_start and t_end are the same for every train
-              2) The spike times are sorted
-              3) No duplicate times in any train  
-              4) spike times outside of t_start,t_end removed
+    """
+    Ensure that spike trains meet PySpike rules.
+
+    Args:
+        spike_trains (list of SpikeTrain): A list of SpikeTrain objects.
+
+    Returns:
+        list of SpikeTrain: The same list with some fixes:
+            1. t_start and t_end are the same for every train.
+            2. The spike times are sorted.
+            3. No duplicate times in any train.
+            4. Spike times outside of t_start, t_end are removed.
     """
     ## handle sorting and uniqueness first (np.unique() does a sort)
     spike_trains = [SpikeTrain(np.unique(s.spikes), 
@@ -200,7 +205,23 @@ def reconcile_spike_trains_bi(spike_train1, spike_train2):
 # create synfire
 ############################################################
 
-def renorm(values, tmin, tmax, inside=0):
+def _renorm(values, tmin, tmax, inside=0):
+    """
+    Normalize values to a specified range [tmin, tmax].
+
+    :param values: List of arrays or a single array of values to normalize.
+    :type values: list or ndarray
+    :param tmin: Minimum value of the target range.
+    :type tmin: float
+    :param tmax: Maximum value of the target range.
+    :type tmax: float
+    :param inside: Flag to adjust values slightly if they coincide with tmin or tmax.
+    :type inside: int
+
+    :returns:
+        - norm_values (list or ndarray): Normalized values.
+    :rtype: list or ndarray
+    """
     if isinstance(values, list):
         all_values = np.concatenate(values)
         minas = np.min(all_values)
@@ -219,6 +240,8 @@ def renorm(values, tmin, tmax, inside=0):
                             norm_values.append((values[trc] - minas) / (maxas - minas) * (tmax - tmin - 2 * 1e-10) + tmin + 1e-10)
                     else:
                         norm_values.append((values[trc] - minas) / (maxas - minas) * (tmax - tmin) + tmin)
+                else:
+                    norm_values.append([])
             else:
                 if inside == 1:
                     if values[trc][0] == tmin:
@@ -255,6 +278,39 @@ def renorm(values, tmin, tmax, inside=0):
                 return values
 
 def create_synfire(tmin, tmax, num_trains, num_synfire_events, num_inverse_events, overlap, shuffle, jitter, complete, background, order, plotting):
+    """
+    Generate synthetic spike trains with various configurations.
+
+    :param tmin: Minimum time for spike events.
+    :type tmin: float
+    :param tmax: Maximum time for spike events.
+    :type tmax: float
+    :param num_trains: Number of spike trains to generate.
+    :type num_trains: int
+    :param num_synfire_events: Number of synfire events.
+    :type num_synfire_events: int
+    :param num_inverse_events: Number of inverse events.
+    :type num_inverse_events: int
+    :param overlap: Overlap ratio for events. (between 0 and 1)
+    :type overlap: float
+    :param shuffle: Shuffle ratio for events. (between 0 and 1)
+    :type shuffle: float
+    :param jitter: Jitter ratio for events. (between 0 and 1)
+    :type jitter: float
+    :param complete: Completeness ratio for events. (between 0 and 1)
+    :type complete: float
+    :param background: Background noise ratio. (between 0 and 1)
+    :type background: float
+    :param order: Order of spike trains (0: original, 1: reverse, 2: random).
+    :type order: int
+    :param plotting: Flag to plot the spike trains.
+    :type plotting: int
+
+    :returns:
+        - spike_trains (list): List of 'SpikeTrain' Class.
+        - original_shift (ndarray): Array of original shifts.
+    :rtype: list
+    """
     refractoriness = 0.0001
     num_total_events = num_synfire_events + num_inverse_events
     num_total_spikes = num_trains * num_total_events
@@ -350,12 +406,14 @@ def create_synfire(tmin, tmax, num_trains, num_synfire_events, num_inverse_event
                         spikes6[trc][minp] -= refractoriness
                     else:
                         spikes6[trc][minp + 1] += refractoriness
+                if len(spikes6[trc]) < 2:
+                    break
         spikes = spikes6
 
     num_spikes = [len(x) for x in spikes]
 
     unnorm_spikes = spikes
-    spikes = renorm(spikes, tmin, tmax, 0)
+    spikes = _renorm(spikes, tmin, tmax, 0)
     indy = np.where(np.array(num_spikes) > 1)[0]
 
     if indy.size > 0 and not np.array_equal(unnorm_spikes, spikes):
@@ -374,33 +432,53 @@ def create_synfire(tmin, tmax, num_trains, num_synfire_events, num_inverse_event
 
     original_shift[np.abs(original_shift) < 1e-14] = 0
 
-    if plotting == 1:
-        fs = 15
-        fig, ax = plt.subplots(figsize=(17, 10), dpi=80)
-        plt.title("Rasterplot", color='k', fontsize=24)
-        plt.xlabel('Time', color='k', fontsize=18)
-        plt.ylabel('Spike Trains', color='k', fontsize=18)
-        plt.axis([tmin-0.05*(tmax-tmin), tmax+0.05*(tmax-tmin), 0, num_trains+1])
-        plt.xticks(np.arange(tmin,tmax+1,1000), fontsize=14)
-        plt.yticks(np.arange(1,num_trains+1), np.arange(num_trains,0,-1),fontsize=14)
-        plt.plot((tmin, tmax), (0.5, 0.5), ':', color='k', linewidth=1)
-        plt.plot((tmin, tmax), (num_trains+0.5, num_trains+0.5), ':', color='k', linewidth=1)
-        plt.plot((tmin, tmin), (0.5, num_trains+0.5), ':', color='k', linewidth=1)
-        plt.plot((tmax, tmax), (0.5, num_trains+0.5), ':', color='k', linewidth=1)
-        for i in range(num_trains):
-            for j in range(len(spikes[i])):
-                plt.plot((spikes[i][j], spikes[i][j]), (num_trains-i+0.5, num_trains-i-0.5), '-', color='k', linewidth=1)
-        if num_trains < 12:
-            plt.yticks(range(1, num_trains + 1), labels=range(num_trains, 0, -1))
-        elif num_trains < 51:
-            plt.yticks(range(num_trains, num_trains - 11, -10), labels=range(10, num_trains + 1, 10))
-        else:
-            plt.yticks(range(num_trains, num_trains - 21, -20), labels=range(20, num_trains + 1, 20))
-        plt.box(True)
-        plt.xticks(fontsize=fs)
-        plt.yticks(fontsize=fs)
-        plt.show()
     spike_trains = []
     for i in spikes:
         spike_trains.append(spk.SpikeTrain(i, [tmin, tmax]))
+
+    if plotting == 1:
+        try:
+            from .plotting import plot_spike_trains
+        except ImportError:
+            raise ImportError("Error: Could not import plot_spike_trains from pyspike.plotting.")
+        plot_spike_trains(spike_trains, tmin, tmax, order_color=1)
+        plt.show()
+    
     return [spike_trains, original_shift]
+
+def f_all_trains(spikes):
+    """
+    Flattens and pools all spike trains into a single list while maintaining the association of spikes with their original trains.
+
+    Example of what kind of result we can have ::
+                spikes = []
+                spikes.append(pyspike.SpikeTrain([1, 5, 10], [tmin, tmax]))
+                spikes.append(pyspike.SpikeTrain([2, 3, 9], [tmin, tmax]))
+                spikes.append(pyspike.SpikeTrain([1.2, 4, 10], [tmin, tmax]))
+
+                >>f_all_trains(spikes)
+                [1, 3, 2, 2, 3, 1, 2, 1, 3], [1, 1.2, 2, 3, 4, 5, 9, 10, 10]
+
+    :param spikes: List of spike trains.
+    :type spikes: List of :class:`pyspike.SpikeTrain`
+    :returns: A tuple containing two lists:
+              - all_trains: List indicating the original train for each spike in the pooled list.
+              - pooled: List of all spike times from all trains, sorted in ascending order.
+    :rtype: tuple of lists
+    """
+    num_trains = len(spikes)
+    num_spikes_per_train = [len(train) for train in spikes]
+    dummy = [0] + num_spikes_per_train
+    all_indy = [0] * sum(num_spikes_per_train)
+   
+    for trc in range(num_trains):
+        start_idx = sum(dummy[0:trc+1])
+        end_idx = start_idx + num_spikes_per_train[trc]
+        all_indy[start_idx:end_idx] = [trc+1] * num_spikes_per_train[trc]
+
+    sp_flat = [spike for train in spikes for spike in train]
+    sp_indy = sorted(range(len(sp_flat)), key=lambda i: sp_flat[i])
+    all_trains = [all_indy[idx] for idx in sp_indy]
+    pooled = [sp_flat[idx] for idx in sp_indy]
+   
+    return np.array(all_trains), np.array(pooled)

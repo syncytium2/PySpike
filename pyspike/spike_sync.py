@@ -9,9 +9,9 @@ import numpy as np
 from functools import partial
 import pyspike
 from pyspike import DiscreteFunc, SpikeTrain
-from pyspike.generic import _generic_profile_multi, _generic_distance_matrix, resolve_keywords
-from pyspike.isi_lengths import default_thresh
-from pyspike.spikes import reconcile_spike_trains, reconcile_spike_trains_bi
+from .generic import _generic_profile_multi, _generic_distance_matrix, resolve_keywords
+from .isi_lengths import default_thresh
+from .spikes import reconcile_spike_trains, reconcile_spike_trains_bi
 
 
 ############################################################
@@ -26,16 +26,6 @@ def spike_sync_profile(*args, **kwargs):
     divided by the number of spike trains pairs involving the spike train of
     containing this spike, which is the number of spike trains minus one (N-1).
 
-    Valid call structures::
-
-      spike_sync_profile(st1, st2)  # returns the bi-variate profile
-      spike_sync_profile(st1, st2, st3)  # multi-variate profile of 3 sts
-
-      sts = [st1, st2, st3, st4]  # list of spike trains
-      spike_sync_profile(sts)  # profile of the list of spike trains
-      spike_sync_profile(sts, indices=[0, 1])  # use only the spike trains
-                                               # given by the indices
-
     In the multivariate case, the profile is defined as the number of
     coincidences for each spike in the set of spike trains divided by the
     number of spike trains pairs involving the spike train of containing this
@@ -43,6 +33,16 @@ def spike_sync_profile(*args, **kwargs):
 
     :returns: The spike-sync profile :math:`S_{sync}(t)`.
     :rtype: :class:`pyspike.function.DiscreteFunction`
+
+    Examples::
+
+            spike_sync_profile(st1, st2)  # returns the bi-variate profile
+            spike_sync_profile(st1, st2, st3)  # multi-variate profile of 3 sts
+
+            sts = [st1, st2, st3, st4]  # list of spike trains
+            spike_sync_profile(sts)  # profile of the list of spike trains
+            spike_sync_profile(sts, indices=[0, 1])  # use only the spike trains
+                                                    # given by the indices
     """
     if len(args) == 1:
         return spike_sync_profile_multi(args[0], **kwargs)
@@ -171,22 +171,21 @@ def spike_sync(*args, **kwargs):
 
     .. math:: SYNC = \sum_n C_n / N.
 
-
-    Valid call structures::
-
-      spike_sync(st1, st2)  # returns the bi-variate spike synchronization
-      spike_sync(st1, st2, st3)  # multi-variate result for 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]  # list of spike trains
-      spike_sync(spike_trains)  # spike-sync of the list of spike trains
-      spike_sync(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                # given by the indices
-
     The multivariate SPIKE-Sync is again defined as the overall ratio of all
     coincidence values divided by the total number of spikes.
 
     :returns: The spike synchronization value.
     :rtype: `double`
+
+    Examples::
+
+            spike_sync(st1, st2)  # returns the bi-variate spike synchronization
+            spike_sync(st1, st2, st3)  # multi-variate result for 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            spike_sync(spike_trains)  # spike-sync of the list of spike trains
+            spike_sync(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                        # given by the indices
     """
 
     if len(args) == 1:
@@ -216,7 +215,6 @@ def spike_sync_bi(spike_train1, spike_train2, interval=None, max_tau=None, **kwa
                     coincidence window has no upper bound.
     :returns: The spike synchronization value.
     :rtype: `double`
-
     """
     if kwargs.get('Reconcile', True):
         spike_train1, spike_train2 = reconcile_spike_trains_bi(spike_train1, spike_train2)
@@ -247,7 +245,6 @@ def spike_sync_multi(spike_trains, indices=None, interval=None, max_tau=None, **
                     coincidence window has no upper bound.
     :returns: The multi-variate spike synchronization value SYNC.
     :rtype: double
-
     """
     if kwargs.get('Reconcile', True):
         spike_trains = reconcile_spike_trains(spike_trains)
@@ -300,7 +297,6 @@ def spike_sync_matrix(spike_trains, indices=None, interval=None, max_tau=None, *
     :returns: 2D array with the pair wise time spike synchronization values
               :math:`SYNC_{ij}`
     :rtype: np.array
-
     """
     dist_func = partial(spike_sync_bi, max_tau=max_tau)
     ShouldBeSync =  _generic_distance_matrix(spike_trains, dist_func,

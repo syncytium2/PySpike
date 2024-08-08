@@ -4,7 +4,6 @@
 
 import numpy as np
 
-
 class SpikeTrain(object):
     """ Class representing spike trains for the PySpike Module."""
 

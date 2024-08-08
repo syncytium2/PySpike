@@ -6,10 +6,9 @@ from __future__ import absolute_import
 
 import pyspike
 from pyspike import PieceWiseLinFunc
-from pyspike.generic import _generic_profile_multi, _generic_distance_multi, \
-    _generic_distance_matrix, resolve_keywords
-from pyspike.isi_lengths import default_thresh
-from pyspike.spikes import reconcile_spike_trains, reconcile_spike_trains_bi
+from .generic import _generic_profile_multi, _generic_distance_multi, _generic_distance_matrix, resolve_keywords
+from .isi_lengths import default_thresh
+from .spikes import reconcile_spike_trains, reconcile_spike_trains_bi
 
 
 ############################################################
@@ -20,16 +19,6 @@ def spike_profile(*args, **kwargs):
     spike trains. Returns the profile as a PieceWiseConstLin object. The
     SPIKE-values are defined positive :math:`S(t)>=0`.
 
-    Valid call structures::
-
-      spike_profile(st1, st2)  # returns the bi-variate profile
-      spike_profile(st1, st2, st3)  # multi-variate profile of 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]  # list of spike trains
-      spike_profile(spike_trains)  # profile of the list of spike trains
-      spike_profile(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                   # given by the indices
-
     The multivariate spike-distance profile is defined as the average of all
     pairs of spike-trains:
 
@@ -39,6 +28,16 @@ def spike_profile(*args, **kwargs):
 
     :returns: The spike-distance profile :math:`S(t)`
     :rtype: :class:`.PieceWiseConstLin`
+
+    Examples::
+
+            spike_profile(st1, st2)  # returns the bi-variate profile
+            spike_profile(st1, st2, st3)  # multi-variate profile of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            spike_profile(spike_trains)  # profile of the list of spike trains
+            spike_profile(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                        # given by the indices
     """
     if len(args) == 1:
         return spike_profile_multi(args[0], **kwargs)
@@ -123,17 +122,6 @@ def spike_distance(*args, **kwargs):
 
     .. math:: D_S = \\int_{T_0}^{T_1} S(t) dt.
 
-
-    Valid call structures::
-
-      spike_distance(st1, st2)  # returns the bi-variate distance
-      spike_distance(st1, st2, st3)  # multi-variate distance of 3 spike trains
-
-      spike_trains = [st1, st2, st3, st4]  # list of spike trains
-      spike_distance(spike_trains)  # distance of the list of spike trains
-      spike_distance(spike_trains, indices=[0, 1])  # use only the spike trains
-                                                    # given by the indices
-
     In the multivariate case, the spike distance is given as the integral over
     the multivariate profile, that is the average profile of all spike train
     pairs:
@@ -143,6 +131,16 @@ def spike_distance(*args, **kwargs):
 
     :returns: The spike-distance :math:`D_S`.
     :rtype: double
+
+    Examples::
+
+            spike_distance(st1, st2)  # returns the bi-variate distance
+            spike_distance(st1, st2, st3)  # multi-variate distance of 3 spike trains
+
+            spike_trains = [st1, st2, st3, st4]  # list of spike trains
+            spike_distance(spike_trains)  # distance of the list of spike trains
+            spike_distance(spike_trains, indices=[0, 1])  # use only the spike trains
+                                                            # given by the indices
     """
 
     if len(args) == 1:

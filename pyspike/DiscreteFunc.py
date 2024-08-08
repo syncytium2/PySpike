@@ -63,7 +63,7 @@ class DiscreteFunc(object):
 
         Example::
 
-            x, y = f.get_plottable_data()
+            x, y = f.get_plottable_data() # with type(f) = DiscreteFunc object
             plt.plot(x, y, '-o', label="Discrete function")
         """
 
@@ -123,6 +123,43 @@ class DiscreteFunc(object):
         else:  # k = 0
 
             return 1.0*self.x, 1.0*self.y/self.mp
+    
+    def get_multi_plottable_data(self, spike_trains):
+        """ Returns two arrays containing x- and y-coordinates for each spike timing for plotting
+        the interval sequence.
+
+        :param spike_trains: First spike train.
+        :type spike_trains: :class:`.SpikeTrain`
+        :returns: (x_plot, y_plot) containing plottable data
+        :rtype: pair of np.array
+
+        Example::
+
+            x, y = f.get_multi_plottable_data(spike_trains) # with type(f) = DiscreteFunc object
+            plt.plot(x, y, '-o', label="Discrete function")
+        """
+        spike_time = []
+        for i in range(len(spike_trains)):
+            for j in range(len(spike_trains[i])):
+                spike_time.append(spike_trains[i][j])
+        prof_without = 1.0*self.y/self.mp
+        prof_values = list(prof_without[1:-1])
+        spike_time.sort()
+        L = []
+        k = 1
+        for i in range(1, len(spike_time)):
+            if spike_time[i-1] == spike_time[i]:
+                k += 1
+            else:
+                L.append(k)
+                k = 1
+        L.append(k)
+        k = 0
+        for i in range(len(prof_values)):
+            for j in range(L[i]-1):
+                prof_values.insert(i+k, prof_values[i+k])
+                k += 1
+        return np.array(spike_time), np.array(prof_values)
 
     def integral(self, interval=None):
         """ Returns the integral over the given interval. For the discrete

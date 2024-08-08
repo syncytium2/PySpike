@@ -7,7 +7,7 @@ Distributed under the BSD License
 from __future__ import absolute_import
 
 __all__ = ["isi_distance", "spike_distance", "spike_sync", "psth",
-           "spikes", "spike_order", "SpikeTrain",
+           "spikes", "spike_order", "SpikeTrain", "generic", "plotting", "latency_correction", "generate_surrogate"
            "PieceWiseConstFunc", "PieceWiseLinFunc", "DiscreteFunc"]
 
 from .PieceWiseConstFunc import PieceWiseConstFunc
@@ -15,25 +15,15 @@ from .PieceWiseLinFunc import PieceWiseLinFunc
 from .DiscreteFunc import DiscreteFunc
 from .SpikeTrain import SpikeTrain
 
-from .isi_distance import isi_profile, isi_distance, isi_profile_multi,\
-    isi_distance_multi, isi_distance_matrix
-from .spike_distance import spike_profile, spike_distance, spike_profile_multi,\
-    spike_distance_multi, spike_distance_matrix
-from .spike_sync import spike_sync_profile, spike_sync,\
-    spike_sync_profile_multi, spike_sync_multi, spike_sync_matrix,\
-    filter_by_spike_sync
+from .isi_distance import isi_profile, isi_distance, isi_profile_multi, isi_distance_multi, isi_distance_matrix
+from .spike_distance import spike_profile, spike_distance, spike_profile_multi, spike_distance_multi, spike_distance_matrix
+from .spike_sync import spike_sync_profile, spike_sync, spike_sync_profile_multi, spike_sync_multi, spike_sync_matrix, filter_by_spike_sync
 from .psth import psth
-
-from .spikes import load_spike_trains_from_txt, save_spike_trains_to_txt, \
-    spike_train_from_string, import_spike_trains_from_time_series, \
-    merge_spike_trains, generate_poisson_spikes
-
-from .spike_order import spike_train_order, \
-    spike_order_values, spike_train_order_matrix, \
-    spike_train_order_profile, spike_train_order_profile_bi, \
-    spike_train_order_profile_multi, spike_train_order_value, \
-    spike_train_order_bi, spike_train_order_multi, \
-    optimal_spike_train_sorting, permutate_matrix
+from .spikes import load_spike_trains_from_txt, save_spike_trains_to_txt, spike_train_from_string, import_spike_trains_from_time_series, merge_spike_trains, generate_poisson_spikes, create_synfire, reconcile_spike_trains
+from .spike_order import _spike_train_order_matrix_impl, spike_order_values, spike_train_order_matrix, spike_train_order_profile, spike_train_order_profile_bi, spike_train_order_profile_multi, spike_train_order, spike_train_order_bi, spike_train_order_multi, optimal_spike_train_sorting, permutate_matrix, _spike_train_order_impl, spike_order_matrix, spike_order_profile
+from .plotting import plot_spike_trains, plot_profile, plot_matrix, plot_surrogates, plot_average_diagonal_value, spike_matching_plot, plot_latency_correction
+from .latency_correction import Spike_time_difference_matrix, cost_matrix, latency_correction_extrapol, latency_correction_intrapol, sim_ann_latency_correction
+from .generic import Multi_Profile_Matrix
 
 # define the __version__ following
 # http://stackoverflow.com/questions/17583443
