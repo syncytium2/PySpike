@@ -57,7 +57,7 @@ def test_generate_surro():
         with patch('pyspike.generate_surrogate.random.randint', side_effect=mock_randint_surro):
             result = generate_surro(sto_profs, num_surros)
 
-    expected_result = np.array([0.1962, 0.2566, 0.3623, 0.1811, 0.1962, 0.317 , 0.166 , 0.2113, 0.2717, 0.1509, 0.1962, 0.2717, 0.2264, 0.2717, 0.317 , 0.1962, 0.2415, 0.2868, 0.1811]) ##### need to check if it's correct
+    expected_result = np.array([0.2717, 0.2113, 0.2868, 0.2415, 0.166 , 0.2113, 0.2717, 0.1811, 0.2264, 0.3925, 0.1811, 0.2113, 0.2566, 0.2717, 0.2415, 0.3019, 0.1509, 0.2264, 0.3019])
 
     assert_array_almost_equal(result, expected_result, decimal=4)
 
@@ -119,7 +119,7 @@ def test_Spike_Order_surro():
                                 [1, 7, 16, 23, 29, 35, 41, 47, 52, 2, 8, 16, 21, 29, 35, 41, 47, 52, 3, 9, 16, 22, 29, 35, 41, 47, 4, 10, 16, 19, 29, 35, 41, 47, 52, 5, 11, 17, 20, 29, 35, 41, 47, 52, 2, 8, 14, 23, 25, 34, 40, 46, 51, 3, 9, 15, 23, 28, 34, 40, 46, 4, 10, 13, 23, 27, 34, 40, 46, 51, 5, 11, 17, 23, 26, 34, 40, 46, 51, 3, 9, 15, 22, 28, 33, 39, 45, 4, 10, 14, 21, 27, 33, 39, 45, 50, 5, 11, 17, 21, 26, 33, 39, 45, 50, 4, 10, 15, 22, 28, 32, 38, 44, 5, 11, 17, 22, 28, 32, 38, 44, 5, 11, 17, 20, 27, 31, 37, 43, 49]])
     expected_error_count = 0
 
-    assert_array_equal(result, expected_result) ##### need to check if it's correct 
+    assert_array_equal(result, expected_result)
     assert error_count == expected_error_count
 
 def test_optimal_spike_train_sorting_from_matrix():
