@@ -21,14 +21,18 @@ else:
     use_cython = True
 
 
-class numpy_include(object):
-    """Defers import of numpy until install_requires is through"""
-    def __str__(self):
-        import numpy
-        return numpy.get_include()
+class numpy_include(os.PathLike):
+     """Defers import of numpy until install_requires is through"""
+     def __str__(self):
+         import numpy
+         return numpy.get_include()
+
+     def __fspath__(self):
+         return str(self)
 
 
 if os.path.isfile("pyspike/cython/cython_add.c") and \
+   os.path.isfile("pyspike/cython/cython_get_tau.c") and \
    os.path.isfile("pyspike/cython/cython_profiles.c") and \
    os.path.isfile("pyspike/cython/cython_distances.c") and \
    os.path.isfile("pyspike/cython/cython_directionality.c") and \
@@ -37,6 +41,13 @@ if os.path.isfile("pyspike/cython/cython_add.c") and \
 else:
     use_c = False
 
+if not use_cython and not use_c:
+    print('Cython not installed. Programs will be slow.')
+    # Ans = input('Abort? (Y/N)\n')
+    # if len(Ans)>0 and (Ans[0]=='Y' or Ans[0]=='y'):
+    #     print("\nAborting\n")
+    #     raise RuntimeError('User termination')
+
 cmdclass = {}
 ext_modules = []
 
@@ -44,6 +55,8 @@ if use_cython:  # Cython is available, compile .pyx -> .c
     ext_modules += [
         Extension("pyspike.cython.cython_add",
                   ["pyspike/cython/cython_add.pyx"]),
+        Extension("pyspike.cython.cython_get_tau",
+                  ["pyspike/cython/cython_get_tau.pyx"]),
         Extension("pyspike.cython.cython_profiles",
                   ["pyspike/cython/cython_profiles.pyx"]),
         Extension("pyspike.cython.cython_distances",
@@ -58,6 +71,8 @@ elif use_c:  # c files are there, compile to binaries
     ext_modules += [
         Extension("pyspike.cython.cython_add",
                   ["pyspike/cython/cython_add.c"]),
+        Extension("pyspike.cython.cython_get_tau",
+                  ["pyspike/cython/cython_get_tau.c"]),
         Extension("pyspike.cython.cython_profiles",
                   ["pyspike/cython/cython_profiles.c"]),
         Extension("pyspike.cython.cython_distances",
@@ -71,7 +86,7 @@ elif use_c:  # c files are there, compile to binaries
 
 setup(
     name='pyspike',
-    packages=find_packages(exclude=['doc']),
+    packages=find_packages(exclude=['doc', 'test*']),
     version='0.8.0',
     cmdclass=cmdclass,
     ext_modules=ext_modules,
@@ -105,7 +120,9 @@ train similarity',
         'Programming Language :: Python :: 3.10',
     ],
     package_data={
-        'pyspike': ['cython/cython_add.c', 'cython/cython_profiles.c',
+        'pyspike': ['cython/cython_add.c', 
+                    'cython/cython_profiles.c',
+                    'cython/cython_get_tau.c',
                     'cython/cython_distances.c',
                     'cython/cython_directionality.c',
                     'cython/cython_simulated_annealing.c'],

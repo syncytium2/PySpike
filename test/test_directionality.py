@@ -15,8 +15,8 @@ from numpy.testing import assert_equal, assert_almost_equal, \
 import pyspike as spk
 from pyspike import SpikeTrain, DiscreteFunc
 
-
 def test_spike_directionality():
+    
     st1 = SpikeTrain([100, 200, 300], [0, 1000])
     st2 = SpikeTrain([105, 205, 300], [0, 1000])
     assert_almost_equal(spk.spike_directionality(st1, st2), 2.0/3.0)
@@ -92,6 +92,6 @@ def test_spike_train_order():
 
     # We can also compute the synfire indicator from the Directionality Matrix:
     D_matrix = spk.spike_directionality_matrix([st1, st2, st3], normalize=False)
-    num_spikes = np.sum(len(st) for st in [st1, st2, st3])
+    num_spikes = sum(len(st) for st in [st1, st2, st3])
     syn_fire = np.sum(np.triu(D_matrix)) / num_spikes
     assert_almost_equal(f.avrg(), syn_fire)

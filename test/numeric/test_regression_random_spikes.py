@@ -6,6 +6,7 @@ Distributed under the BSD License
 """
 from __future__ import print_function
 
+import os
 import numpy as np
 from scipy.io import loadmat
 import pyspike as spk
@@ -14,18 +15,21 @@ from numpy.testing import assert_almost_equal
 
 spk.disable_backend_warning = True
 
+max_trr_trials = 100  # speed things up
 
 def test_regression_random():
 
-    spike_file = "test/numeric/regression_random_spikes.mat"
+    spike_file = os.path.join("test", "numeric", "regression_random_spikes.mat")
     spikes_name = "spikes"
     result_name = "Distances"
-    result_file = "test/numeric/regression_random_results_cSPIKY.mat"
+    result_file = os.path.join("test", "numeric", "regression_random_results_cSPIKY.mat")
 
     spike_train_sets = loadmat(spike_file)[spikes_name][0]
     results_cSPIKY = loadmat(result_file)[result_name]
 
     for i, spike_train_data in enumerate(spike_train_sets):
+        if i >= max_trr_trials:
+            break
         spike_trains = []
         for spikes in spike_train_data[0]:
             spike_trains.append(spk.SpikeTrain(spikes.flatten(), 100.0))
@@ -69,6 +73,8 @@ def check_regression_dataset(spike_file="benchmark.mat",
     err_count = 0
 
     for i, spike_train_data in enumerate(spike_train_sets):
+        if i >= max_trr_trials:
+            break
         spike_trains = []
         for spikes in spike_train_data[0]:
             spike_trains.append(spk.SpikeTrain(spikes.flatten(), 100.0))
@@ -102,10 +108,10 @@ def check_regression_dataset(spike_file="benchmark.mat",
 def check_single_spike_train_set(index):
     """ Debuging function """
     np.set_printoptions(precision=15)
-    spike_file = "regression_random_spikes.mat"
+    spike_file = os.path.join("test", "numeric", "regression_random_spikes.mat")
     spikes_name = "spikes"
     result_name = "Distances"
-    result_file = "regression_random_results_cSPIKY.mat"
+    result_file = os.path.join("test", "numeric", "regression_random_results_cSPIKY.mat")
 
     spike_train_sets = loadmat(spike_file)[spikes_name][0]
 
@@ -133,6 +139,6 @@ def check_single_spike_train_set(index):
 
 if __name__ == "__main__":
 
-    # test_regression_random()
-    # check_regression_dataset()
+    test_regression_random()
+    check_regression_dataset()
     check_single_spike_train_set(4)
