@@ -1,0 +1,53 @@
+[build-system]
+# setuptools >=77 supports the SPDX-string form `license = "BSD-2-Clause"`
+# in [project] (PEP 639). numpy and Cython are required because setup.py
+# calls numpy.get_include() and compiles .pyx sources for the C extensions.
+requires = [
+    "setuptools>=77",
+    "wheel",
+    "Cython>=3.0",
+    "numpy>=1.25",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyspike"
+version = "0.9.0"
+description = "A Python library for the numerical analysis of spike train similarity"
+readme = "Readme.rst"
+requires-python = ">=3.9"
+license = "BSD-2-Clause"
+license-files = ["License.txt"]
+authors = [
+    { name = "Mario Mulansky", email = "mario.mulansky@gmx.net" },
+]
+keywords = ["data analysis", "spike", "neuroscience"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy",
+]
+
+[project.urls]
+Homepage = "https://github.com/mariomulansky/PySpike"
+Repository = "https://github.com/mariomulansky/PySpike"
+Issues = "https://github.com/mariomulansky/PySpike/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["doc*", "test*", "examples*"]
+# Cython .c files are generated at build time (.gitignore excludes them) and
+# the resulting .so files are placed automatically. No package_data needed
+# for the wheel; MANIFEST.in handles inclusion of .pyx sources in the sdist.

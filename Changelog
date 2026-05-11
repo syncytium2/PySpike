@@ -1,3 +1,12 @@
+PySpike v0.9
+    * Modernized packaging: project metadata moved into pyproject.toml
+    * Fixed `pip install pyspike` failing in modern pip's isolated build
+      environment with "ModuleNotFoundError: No module named 'numpy'" (#84)
+    * Python 3.12 and 3.13 support: replaced pkg_resources (which depends on
+      setuptools, no longer shipped in default venvs from 3.12 onwards) with
+      stdlib importlib.metadata for __version__ lookup
+    * Dropped support for Python 3.7 and 3.8 (both end-of-life)
+
 PySpike v0.8
     * Support Adaptive versions of distances (Minimum Relevant Time Scale)
     * Support Rate Independent Adaptive spike distance

@@ -35,23 +35,17 @@ from .spike_directionality import spike_directionality, \
     spike_train_order_bi, spike_train_order_multi, \
     optimal_spike_train_sorting, permutate_matrix
 
-# define the __version__ following
-# http://stackoverflow.com/questions/17583443
-from pkg_resources import get_distribution, DistributionNotFound
-import os.path
+# Expose the installed version via importlib.metadata (stdlib since 3.8).
+# Previously this used pkg_resources, which depends on setuptools — and from
+# Python 3.12 onwards venvs no longer ship setuptools by default, so the old
+# import would fail at runtime in fresh 3.12+ environments.
+from importlib.metadata import version as _get_version, PackageNotFoundError
 
 try:
-    _dist = get_distribution('pyspike')
-    # Normalize case for Windows systems
-    dist_loc = os.path.normcase(_dist.location)
-    here = os.path.normcase(__file__)
-    if not here.startswith(os.path.join(dist_loc, 'pyspike')):
-        # not installed, but there is another version that *is*
-        raise DistributionNotFound
-except DistributionNotFound:
-    __version__ = 'Please install this project with setup.py'
-else:
-    __version__ = _dist.version
+    __version__ = _get_version("pyspike")
+except PackageNotFoundError:
+    # Running from a source checkout that hasn't been installed.
+    __version__ = "0.0.0+unknown"
 
 disable_backend_warning = False
 
