@@ -1,17 +1,23 @@
 """ setup.py
 
-to compile cython files:
-python setup.py build_ext --inplace
+Compile the Cython extensions for PySpike.
+
+All packaging metadata (name, version, dependencies, classifiers, ...) lives in
+pyproject.toml. This file only declares the C extension modules, because that
+still needs imperative setup() configuration.
+
+To compile cython files in-place:
+    python setup.py build_ext --inplace
 
 
-Copyright 2014-2017, Mario Mulansky <mario.mulansky@gmx.net>
+Copyright 2014-2026, Mario Mulansky <mario.mulansky@gmx.net>
 
 Distributed under the BSD License
 
 """
-from setuptools import setup, find_packages
-from distutils.extension import Extension
 import os.path
+
+from setuptools import Extension, setup
 
 try:
     from Cython.Distutils import build_ext
@@ -22,110 +28,62 @@ else:
 
 
 class numpy_include(os.PathLike):
-     """Defers import of numpy until install_requires is through"""
-     def __str__(self):
-         import numpy
-         return numpy.get_include()
+    """Defers import of numpy until the build environment is in place.
 
-     def __fspath__(self):
-         return str(self)
+    pyproject.toml lists numpy as a build-system requirement, so by the time
+    setup.py actually runs build_ext, numpy is importable. We can't import it
+    at module top level, though, because setuptools imports setup.py before
+    build-system requires are installed.
+    """
+
+    def __str__(self):
+        import numpy
+        return numpy.get_include()
+
+    def __fspath__(self):
+        return str(self)
 
 
-if os.path.isfile("pyspike/cython/cython_add.c") and \
-   os.path.isfile("pyspike/cython/cython_get_tau.c") and \
-   os.path.isfile("pyspike/cython/cython_profiles.c") and \
-   os.path.isfile("pyspike/cython/cython_distances.c") and \
-   os.path.isfile("pyspike/cython/cython_directionality.c") and \
-   os.path.isfile("pyspike/cython/cython_simulated_annealing.c"):
-    use_c = True
-else:
-    use_c = False
+_CYTHON_MODULES = (
+    "cython_add",
+    "cython_get_tau",
+    "cython_profiles",
+    "cython_distances",
+    "cython_directionality",
+    "cython_simulated_annealing",
+)
+
+
+def _all_c_sources_present():
+    return all(
+        os.path.isfile(f"pyspike/cython/{name}.c") for name in _CYTHON_MODULES
+    )
+
+
+use_c = _all_c_sources_present()
 
 if not use_cython and not use_c:
-    print('Cython not installed. Programs will be slow.')
-    # Ans = input('Abort? (Y/N)\n')
-    # if len(Ans)>0 and (Ans[0]=='Y' or Ans[0]=='y'):
-    #     print("\nAborting\n")
-    #     raise RuntimeError('User termination')
+    print("Cython not installed and no pre-generated .c files found. "
+          "PySpike will fall back to the pure-Python backend (slow).")
 
 cmdclass = {}
 ext_modules = []
 
-if use_cython:  # Cython is available, compile .pyx -> .c
-    ext_modules += [
-        Extension("pyspike.cython.cython_add",
-                  ["pyspike/cython/cython_add.pyx"]),
-        Extension("pyspike.cython.cython_get_tau",
-                  ["pyspike/cython/cython_get_tau.pyx"]),
-        Extension("pyspike.cython.cython_profiles",
-                  ["pyspike/cython/cython_profiles.pyx"]),
-        Extension("pyspike.cython.cython_distances",
-                  ["pyspike/cython/cython_distances.pyx"]),
-        Extension("pyspike.cython.cython_directionality",
-                  ["pyspike/cython/cython_directionality.pyx"]),
-        Extension("pyspike.cython.cython_simulated_annealing",
-                  ["pyspike/cython/cython_simulated_annealing.pyx"])
+if use_cython:  # Cython is available, compile .pyx -> .c -> binary
+    ext_modules = [
+        Extension(f"pyspike.cython.{name}", [f"pyspike/cython/{name}.pyx"])
+        for name in _CYTHON_MODULES
     ]
-    cmdclass.update({'build_ext': build_ext})
-elif use_c:  # c files are there, compile to binaries
-    ext_modules += [
-        Extension("pyspike.cython.cython_add",
-                  ["pyspike/cython/cython_add.c"]),
-        Extension("pyspike.cython.cython_get_tau",
-                  ["pyspike/cython/cython_get_tau.c"]),
-        Extension("pyspike.cython.cython_profiles",
-                  ["pyspike/cython/cython_profiles.c"]),
-        Extension("pyspike.cython.cython_distances",
-                  ["pyspike/cython/cython_distances.c"]),
-        Extension("pyspike.cython.cython_directionality",
-                  ["pyspike/cython/cython_directionality.c"]),
-        Extension("pyspike.cython.cython_simulated_annealing",
-                  ["pyspike/cython/cython_simulated_annealing.c"])
+    cmdclass["build_ext"] = build_ext
+elif use_c:  # No Cython, but pre-generated .c files are present
+    ext_modules = [
+        Extension(f"pyspike.cython.{name}", [f"pyspike/cython/{name}.c"])
+        for name in _CYTHON_MODULES
     ]
-# neither cython nor c files available -> automatic fall-back to python backend
+# else: neither Cython nor .c files — fall through to pure-Python backend.
 
 setup(
-    name='pyspike',
-    packages=find_packages(exclude=['doc', 'test*']),
-    version='0.8.0',
     cmdclass=cmdclass,
     ext_modules=ext_modules,
     include_dirs=[numpy_include()],
-    description='A Python library for the numerical analysis of spike\
-train similarity',
-    author='Mario Mulansky',
-    author_email='mario.mulansky@gmx.net',
-    license='BSD',
-    url='https://github.com/mariomulansky/PySpike',
-    install_requires=['numpy'],
-    keywords=['data analysis', 'spike', 'neuroscience'],  # arbitrary keywords
-    classifiers=[
-        # How mature is this project? Common values are
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
-        'Development Status :: 4 - Beta',
-
-        # Indicate who your project is intended for
-        'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Information Analysis',
-
-        'License :: OSI Approved :: BSD License',
-
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-    ],
-    package_data={
-        'pyspike': ['cython/cython_add.c', 
-                    'cython/cython_profiles.c',
-                    'cython/cython_get_tau.c',
-                    'cython/cython_distances.c',
-                    'cython/cython_directionality.c',
-                    'cython/cython_simulated_annealing.c'],
-        'test': ['Spike_testdata.txt']
-    }
 )
