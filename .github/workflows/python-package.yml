@@ -11,32 +11,69 @@ on:
 
 jobs:
   build:
-
+    name: Python ${{ matrix.python-version }} (${{ matrix.backend }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        # PySpike treats Cython as an optional accelerator. Both install paths
+        # need to work and produce a passing test suite:
+        #
+        #   cython     -- `pip install .` uses pip's isolated build env, which
+        #                 installs Cython per pyproject.toml's build-system
+        #                 requires. setup.py compiles the .pyx sources into
+        #                 .so modules and the fast path is used at runtime.
+        #
+        #   no-cython  -- `pip install --no-build-isolation .` with Cython
+        #                 deliberately absent. setup.py's `try: import Cython`
+        #                 raises ImportError, no extensions are built, and
+        #                 each pyspike module falls back to python_backend.py
+        #                 via its own `try/except ImportError`.
+        backend: [cython, no-cython]
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libblas-dev liblapack-dev gfortran
+
     - name: Upgrade pip
+      run: python -m pip install --upgrade pip
+
+    - name: Install PySpike — with Cython (build isolation)
+      if: matrix.backend == 'cython'
+      run: pip install .
+
+    - name: Install PySpike — without Cython (pure-Python fallback)
+      if: matrix.backend == 'no-cython'
       run: |
-        python -m pip install --upgrade pip
-    - name: Install PySpike (uses build isolation; reproduces the pip-install path)
-      run: |
-        pip install .
+        # Provide only the bare build prereqs Cython is not among them, so
+        # setup.py's `try: from Cython.Distutils import build_ext` fails and
+        # no C extensions are produced. --no-build-isolation makes pip use
+        # this env instead of provisioning a fresh one (which would install
+        # Cython per pyproject.toml).
+        pip install "setuptools>=77" wheel "numpy>=1.25"
+        pip install --no-build-isolation .
+        # Sanity check: the compiled extension must NOT be importable.
+        python -c "
+        try:
+            from pyspike.cython import cython_distances
+        except ImportError:
+            print('OK: cython_distances absent, runtime will use python_backend')
+        else:
+            raise SystemExit('FAIL: cython_distances was built despite no-cython matrix')
+        "
+
     - name: Install test dependencies
-      run: |
-        pip install pytest scipy
+      run: pip install pytest scipy
+
     - name: Test with PyTest
-      run: |
-        python -m pytest
+      run: python -m pytest
